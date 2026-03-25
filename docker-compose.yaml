@@ -34,7 +34,7 @@ services:
         ports:
             - '3307:3306'
         volumes:
-            - data:/var/lib/mysql
+            - .docker/mysql:/var/lib/mysql
         environment:
             MYSQL_DATABASE: 'packagist'
             MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
