@@ -1,20 +1,77 @@
-version: '3'
-
 services:
+    app:
+        build: .
+        container_name: php-apache
+        volumes:
+            - .:/var/www/html
+        depends_on:
+            - database
+            - redis
+        restart: unless-stopped
+        networks:
+            - traefik-network
+            - app-network
+        labels:
+            - "traefik.enable=true"
+            - "traefik.docker.network=traefik-network"
+            # HTTP router — redirects all traffic to HTTPS
+            - "traefik.http.routers.supper-pos.rule=Host(`${APP_HOST}`)"
+            - "traefik.http.routers.supper-pos.entrypoints=web"
+            - "traefik.http.routers.supper-pos.middlewares=https-redirect"
+            # HTTPS router
+            - "traefik.http.routers.supper-pos-secure.rule=Host(`${APP_HOST}`)"
+            - "traefik.http.routers.supper-pos-secure.entrypoints=websecure"
+            - "traefik.http.routers.supper-pos-secure.tls.certresolver=myresolver"
+            - "traefik.http.routers.supper-pos-secure.middlewares=cors"
+            - "traefik.http.services.supper-pos.loadbalancer.server.port=80"
+            # Middleware: permanent HTTP→HTTPS redirect
+            - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
+            - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
+
+#    database:
+#        image: mysql:8.0
+#        ports:
+#            - 3307:3306
+#        environment:
+#            MYSQL_ALLOW_EMPTY_PASSWORD: 1
+#            MYSQL_DATABASE: packagist
+#            MYSQL_ROOT_PASSWORD: abcabc
+#        volumes:
+#            - data:/var/lib/mysql
+#        networks:
+#            - app-network
     database:
-        image: mysql:8.0
+        image: 'mysql:8.0'
+        restart: unless-stopped
+        tty: true
         ports:
-            - 3306:3306
-        environment:
-            MYSQL_ALLOW_EMPTY_PASSWORD: 1
-            MYSQL_DATABASE: packagist
+            - '3307:3306'
         volumes:
             - data:/var/lib/mysql
+        environment:
+            MYSQL_ALLOW_EMPTY_PASSWORD: true
+            MYSQL_DATABASE: 'packagist'
+            # MYSQL_PASSWORD: ''
+            MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
+        networks:
+            - app-network
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.mysql.rule=Host(`mysql.docker.localhost`)"
+            - "traefik.http.routers.mysql.entrypoints=3306"
+            - "traefik.http.services.mysql.loadbalancer.server.port=3306"
 
     redis:
         image: redis:6.2-alpine
         ports:
-            - 6379:6379
+            - "6379"
+        networks:
+            - app-network
 
 volumes:
     data:
+networks:
+    app-network:
+        driver: bridge
+    traefik-network:
+        external: true

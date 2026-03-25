@@ -1,0 +1,35 @@
+services:
+    traefik:
+        image: traefik:latest
+        container_name: treafik
+        command:
+            - --entrypoints.web.address=:80
+            - --entrypoints.websecure.address=:443
+            - --entrypoints.database.address=:3306
+            - --providers.docker=true
+            - --providers.docker.network=traefik-network
+            - --api.insecure=true
+            - --log.level=ERROR
+            - '--certificatesresolvers.myresolver.acme.tlschallenge=true'
+            - '--certificatesresolvers.myresolver.acme.email=socoladaica@gmail.com'
+            - '--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json'
+        ports:
+            - '80:80'
+            - '443:443'
+            - '3306:3306'
+        volumes:
+            - './letsencrypt:/letsencrypt'
+            - '/var/run/docker.sock:/var/run/docker.sock:ro'
+        restart: unless-stopped
+        networks:
+            - traefik-network
+        labels:
+            - "traefik.http.middlewares.cors.headers.accesscontrolallowmethods=*"
+            - "traefik.http.middlewares.cors.headers.accesscontrolallowheaders=*"
+            - "traefik.http.middlewares.cors.headers.accesscontrolalloworiginlist=*"
+            - "traefik.http.middlewares.cors.headers.accesscontrolmaxage=100"
+            - "traefik.http.middlewares.cors.headers.addvaryheader=true"
+
+networks:
+    traefik-network:
+        external: true
