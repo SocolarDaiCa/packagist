@@ -27,19 +27,6 @@ services:
             # Middleware: permanent HTTP→HTTPS redirect
             - "traefik.http.middlewares.https-redirect.redirectscheme.scheme=https"
             - "traefik.http.middlewares.https-redirect.redirectscheme.permanent=true"
-
-#    database:
-#        image: mysql:8.0
-#        ports:
-#            - 3307:3306
-#        environment:
-#            MYSQL_ALLOW_EMPTY_PASSWORD: 1
-#            MYSQL_DATABASE: packagist
-#            MYSQL_ROOT_PASSWORD: abcabc
-#        volumes:
-#            - data:/var/lib/mysql
-#        networks:
-#            - app-network
     database:
         image: 'mysql:8.0'
         restart: unless-stopped
@@ -49,17 +36,10 @@ services:
         volumes:
             - data:/var/lib/mysql
         environment:
-            MYSQL_ALLOW_EMPTY_PASSWORD: true
             MYSQL_DATABASE: 'packagist'
-            # MYSQL_PASSWORD: ''
             MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
         networks:
             - app-network
-        labels:
-            - "traefik.enable=true"
-            - "traefik.http.routers.mysql.rule=Host(`mysql.docker.localhost`)"
-            - "traefik.http.routers.mysql.entrypoints=3306"
-            - "traefik.http.services.mysql.loadbalancer.server.port=3306"
 
     redis:
         image: redis:6.2-alpine
